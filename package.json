@@ -5,19 +5,31 @@
   "scripts": {
     "start": "node index.js",
     "postinstall": "cd node_modules/sjcl || cd ../sjcl && ./configure --with-sha1 && make",
-    "test": "node_modules/mocha/bin/mocha test/",
-    "benchmark": "node benchmark/*.js"
+    "test": "node_modules/karma/bin/karma start karma.mocha.conf.js",
+    "benchmark": "node_modules/karma/bin/karma start karma.benchmark.conf.js"
   },
   "author": "Justin Tormey <justin@blockchain.com>",
   "dependencies": {
-    "benchmark": "^2.0.0",
-    "browserify": "^13.0.0",
-    "chai": "^3.4.1",
     "crypto-js": "^3.1.6",
-    "mocha": "^2.3.4",
     "pbkdf2": "^3.0.4",
     "pbkdf2-sha256": "^1.1.1",
     "sjcl": "^1.0.3"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "benchmark": "^2.0.0",
+    "brfs": "^1.4.3",
+    "browserify": "^13.0.0",
+    "chai": "^3.4.1",
+    "grunt": "^0.4.5",
+    "karma": "^0.13.19",
+    "karma-benchmark": "^0.4.0",
+    "karma-benchmark-reporter": "^0.1.1",
+    "karma-browserify": "^4.4.2",
+    "karma-chrome-launcher": "^0.2.2",
+    "karma-firefox-launcher": "^0.1.7",
+    "karma-ie-launcher": "^0.2.0",
+    "karma-mocha": "^0.2.1",
+    "karma-safari-launcher": "^0.1.1",
+    "mocha": "^2.3.4"
+  }
 }
