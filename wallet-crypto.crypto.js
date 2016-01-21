@@ -2,6 +2,23 @@
 
 var crypto = require('crypto');
 
+var Iso10126 = {
+
+  pad: function (dataBytes, nBytesPerBlock) {
+    var nPaddingBytes = nBytesPerBlock - dataBytes.length % nBytesPerBlock
+      , paddingBytes  = crypto.randomBytes(nPaddingBytes - 1)
+      , endByte       = new Buffer([ nPaddingBytes ]);
+    return Buffer.concat([ dataBytes, paddingBytes, endByte ]);
+  },
+
+  unpad: function (dataBytes) {
+    var endByteIndex  = dataBytes.length - 1
+      , nPaddingBytes = dataBytes[endByteIndex];
+    return dataBytes.slice(0, -nPaddingBytes);
+  }
+
+};
+
 function encrypt(data, password, iterations) {
   var SALT_BYTES  = 16
     , KEY_BIT_LEN = 256
@@ -12,15 +29,19 @@ function encrypt(data, password, iterations) {
     , key   = crypto.pbkdf2Sync(password, salt, iterations, KEY_BIT_LEN / 8);
 
   var cipher = crypto.createCipheriv(AES_CBC, key, iv);
+  cipher.setAutoPadding(false);
 
-  data = new Buffer(data, 'utf8');
-  var encrypted = cipher.update(data, '_', 'hex') + cipher.final('hex')
+  var dataBuffer  = new Buffer(data, 'utf8')
+    , dataPadded  = Iso10126.pad(dataBuffer, KEY_BIT_LEN / 8);
+
+  var encrypted = cipher.update(dataPadded, '_', 'hex') + cipher.final('hex')
     , payload   = iv.toString('hex') + encrypted;
 
   return new Buffer(payload, 'hex').toString('base64');
 }
 
-function decryptAes(data, password, iterations) {
+function decryptAes(data, password, iterations, options) {
+  options = options || {};
   var SALT_BYTES  = 16
     , KEY_BIT_LEN = 256
     , AES_CBC     = 'aes-256-cbc';
@@ -32,9 +53,13 @@ function decryptAes(data, password, iterations) {
     , key     = crypto.pbkdf2Sync(password, salt, iterations, KEY_BIT_LEN / 8);
 
   var decipher = crypto.createDecipheriv(AES_CBC, key, iv);
+  decipher.setAutoPadding(false);
 
-  var decrypted = decipher.update(payload, 'hex', 'utf8');
-  return decrypted + decipher.final('utf8');
+  var decryptedBase64 = decipher.update(payload, 'hex', 'base64') + decipher.final('base64')
+    , decryptedBytes  = new Buffer(decryptedBase64, 'base64')
+    , unpaddedBytes   = (options.padding || Iso10126).unpad(decryptedBytes);
+
+  return unpaddedBytes.toString('utf8');
 }
 
 module.exports = {

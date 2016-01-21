@@ -120,9 +120,7 @@ function encrypt(data, password, pbkdf2_iterations) {
   var payload = CryptoJS.enc.Utf8.parse(data);
   var encrypted = CryptoJS.AES.encrypt(payload, stretched_password, {
     mode: CryptoJS.mode.CBC,
-    // TMP
-    padding: CryptoJS.pad.Pkcs7,
-    // padding: CryptoJS.pad.Iso10126,
+    padding: CryptoJS.pad.Iso10126,
     iv: iv
   });
   var res = iv.toString() + encrypted.ciphertext.toString();
