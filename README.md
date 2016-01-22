@@ -9,6 +9,8 @@
 
 ## Metrics
 
-  Run tests: `npm test`
+  Run tests (browser): `npm test`
+
+  Run tests (node): `npm run test:node`
 
   Run benchmarks: `npm run benchmark`

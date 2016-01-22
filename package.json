@@ -6,6 +6,7 @@
     "start": "node index.js",
     "postinstall": "cd node_modules/sjcl || cd ../sjcl && ./configure --with-sha1 && make",
     "test": "node_modules/karma/bin/karma start karma.mocha.conf.js",
+    "test:node": "node_modules/mocha/bin/mocha test/",
     "benchmark": "node_modules/karma/bin/karma start karma.benchmark.conf.js"
   },
   "author": "Justin Tormey <justin@blockchain.com>",
@@ -20,6 +21,7 @@
     "brfs": "^1.4.3",
     "browserify": "^13.0.0",
     "chai": "^3.4.1",
+    "chai-spies": "^0.7.1",
     "grunt": "^0.4.5",
     "karma": "^0.13.19",
     "karma-benchmark": "^0.4.0",
