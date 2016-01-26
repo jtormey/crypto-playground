@@ -79,6 +79,46 @@ var Iso97971 = {
   }
 };
 
+function decryptSecretWithSecondPassword(secret, password, sharedKey, pbkdf2_iterations) {
+  assert(secret, 'secret missing');
+  assert(password, 'password missing');
+  assert(sharedKey, 'sharedKey missing');
+  assert(pbkdf2_iterations, 'pbkdf2_iterations missing');
+
+  var result = decryptAes(secret, sharedKey + password, pbkdf2_iterations);
+  assert(result, 'Second password decryption failure');
+  return result;
+}
+
+function encryptSecretWithSecondPassword(base58, password, sharedKey, pbkdf2_iterations) {
+  assert(base58, 'base58 missing');
+  assert(password, 'password missing');
+  assert(sharedKey, 'sharedKey missing');
+  assert(pbkdf2_iterations, 'pbkdf2_iterations missing');
+  var base64 = new Buffer(base58, 'base58').toString('base64');
+  return encrypt(base58, sharedKey + password, pbkdf2_iterations);
+}
+
+function cipherFunction(password, sharedKey, pbkdf2Iterations, operation) {
+  // operation can be 'enc' or 'dec'
+  var id = function (msg) { return msg; };
+  if (!password || !sharedKey || !pbkdf2Iterations) { return id; }
+  else {
+    switch(operation) {
+      case 'enc':
+        return function (msg) {
+          return encryptSecretWithSecondPassword(msg, password, sharedKey, pbkdf2Iterations);
+        };
+      case 'dec':
+        return function (msg) {
+          return decryptSecretWithSecondPassword(msg, password, sharedKey, pbkdf2Iterations);
+        };
+      default:
+        return id;
+    };
+  }
+}
+
 function decryptWallet(data, password, success, error) {
   try       { success(decryptWalletSync(data, password)); }
   catch (e) { error(e);                                   }
@@ -191,10 +231,21 @@ function decryptAes(data, password, iterations, options) {
 }
 
 module.exports = {
-  decryptWallet: decryptWallet,
-  decryptWalletSync: decryptWalletSync,
+  decryptSecretWithSecondPassword: decryptSecretWithSecondPassword,
+  encryptSecretWithSecondPassword: encryptSecretWithSecondPassword,
+  // decrypt: decrypt, // deprecated
   encrypt: encrypt,
+  // encryptWallet: encryptWallet,
+  decryptWallet: decryptWallet,
+  // reencrypt: reencrypt,
+  // decryptPasswordWithProcessedPin: decryptPasswordWithProcessedPin,
+  // stretchPassword: stretchPassword,
+  // hashNTimes: hashNTimes,
+  cipherFunction: cipherFunction,
   decryptAes: decryptAes,
+
+  // Not part of original
+  decryptWalletSync: decryptWalletSync,
   padding: {
     NoPadding: NoPadding,
     ZeroPadding: ZeroPadding,
