@@ -230,6 +230,14 @@ function decryptAes(data, password, iterations, options) {
   return unpaddedBytes.toString('utf8');
 }
 
+function hashNTimes(password, iterations) {
+  var hashed = password;
+  for (var i = 0; i < iterations; i++) {
+    hashed = crypto.createHash('sha256').update(hashed).digest('hex');
+  }
+  return hashed;
+}
+
 module.exports = {
   decryptSecretWithSecondPassword: decryptSecretWithSecondPassword,
   encryptSecretWithSecondPassword: encryptSecretWithSecondPassword,
@@ -240,7 +248,7 @@ module.exports = {
   // reencrypt: reencrypt,
   // decryptPasswordWithProcessedPin: decryptPasswordWithProcessedPin,
   // stretchPassword: stretchPassword,
-  // hashNTimes: hashNTimes,
+  hashNTimes: hashNTimes,
   cipherFunction: cipherFunction,
   decryptAes: decryptAes,
 
