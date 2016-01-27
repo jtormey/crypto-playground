@@ -278,7 +278,7 @@ function hashNTimes(password, iterations) {
 module.exports = {
   decryptSecretWithSecondPassword: decryptSecretWithSecondPassword,
   encryptSecretWithSecondPassword: encryptSecretWithSecondPassword,
-  // decrypt: decrypt,
+  decrypt: decryptAes,
   encrypt: encrypt,
   encryptWallet: encryptWallet,
   decryptWallet: decryptWallet,
