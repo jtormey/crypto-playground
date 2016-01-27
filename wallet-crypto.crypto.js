@@ -243,6 +243,18 @@ function decryptAes(data, password, iterations, options) {
   return unpaddedBytes.toString('utf8');
 }
 
+function reencrypt(pw, sharedKey, previous_pbkdf2_iterations, new_pbkdf2_iterations) {
+  assert(pw, 'password missing');
+  assert(sharedKey, 'password missing');
+  assert(previous_pbkdf2_iterations, 'previous_pbkdf2_iterations missing');
+  assert(new_pbkdf2_iterations, 'new_pbkdf2_iterations missing');
+
+  return function (data) {
+    var decrypted = decryptSecretWithSecondPassword(data, pw, sharedKey, previous_pbkdf2_iterations);
+    return encrypt(decrypted, sharedKey + pw, new_pbkdf2_iterations);
+  };
+}
+
 function hashNTimes(password, iterations) {
   var hashed = password;
   for (var i = 0; i < iterations; i++) {
@@ -258,7 +270,7 @@ module.exports = {
   encrypt: encrypt,
   encryptWallet: encryptWallet,
   decryptWallet: decryptWallet,
-  // reencrypt: reencrypt,
+  reencrypt: reencrypt,
   // decryptPasswordWithProcessedPin: decryptPasswordWithProcessedPin,
   // stretchPassword: stretchPassword,
   hashNTimes: hashNTimes,
