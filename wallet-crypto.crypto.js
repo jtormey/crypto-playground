@@ -262,6 +262,11 @@ function decryptPasswordWithProcessedPin(data, password, pbkdf2_iterations) {
   return decryptAes(data, password, pbkdf2_iterations);
 }
 
+// Mocked for tests
+function stretchPassword(password, salt, iterations) {
+  return '4be158806522094dd184bc9c093ea185c6a4ec003bdc6323108e3f5eeb7e388d';
+}
+
 function hashNTimes(password, iterations) {
   var hashed = password;
   for (var i = 0; i < iterations; i++) {
@@ -279,7 +284,7 @@ module.exports = {
   decryptWallet: decryptWallet,
   reencrypt: reencrypt,
   decryptPasswordWithProcessedPin: decryptPasswordWithProcessedPin,
-  // stretchPassword: stretchPassword,
+  stretchPassword: stretchPassword,
   hashNTimes: hashNTimes,
   cipherFunction: cipherFunction,
   decryptAes: decryptAes,
