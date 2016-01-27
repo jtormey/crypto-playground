@@ -31,6 +31,8 @@ module.exports = function (config) {
 
     browsers: ['Chrome', 'Firefox', 'Safari'],
 
+    browserNoActivityTimeout: 100000,
+
     singleRun: false,
 
     concurrency: Infinity,
