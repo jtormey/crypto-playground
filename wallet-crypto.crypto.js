@@ -268,11 +268,14 @@ function stretchPassword(password, salt, iterations) {
 }
 
 function hashNTimes(password, iterations) {
+  assert('number' === typeof iterations && iterations > 0, '`iterations` must be a number greater than 0');
   var hashed = password;
-  for (var i = 0; i < iterations; i++) {
-    hashed = crypto.createHash('sha256').update(hashed).digest('hex');
-  }
+  while (iterations--) hashed = sha256(hashed);
   return hashed;
+}
+
+function sha256(input) {
+  return crypto.createHash('sha256').update(input).digest('hex');
 }
 
 module.exports = {
@@ -286,6 +289,7 @@ module.exports = {
   decryptPasswordWithProcessedPin: decryptPasswordWithProcessedPin,
   stretchPassword: stretchPassword,
   hashNTimes: hashNTimes,
+  sha256: sha256,
   cipherFunction: cipherFunction,
   decryptAes: decryptAes,
 
