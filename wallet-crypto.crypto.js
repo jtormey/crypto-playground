@@ -255,6 +255,13 @@ function reencrypt(pw, sharedKey, previous_pbkdf2_iterations, new_pbkdf2_iterati
   };
 }
 
+function decryptPasswordWithProcessedPin(data, password, pbkdf2_iterations) {
+  assert(data, 'data missing');
+  assert(password, 'password missing');
+  assert(pbkdf2_iterations, 'pbkdf2_iterations missing');
+  return decryptAes(data, password, pbkdf2_iterations);
+}
+
 function hashNTimes(password, iterations) {
   var hashed = password;
   for (var i = 0; i < iterations; i++) {
@@ -271,7 +278,7 @@ module.exports = {
   encryptWallet: encryptWallet,
   decryptWallet: decryptWallet,
   reencrypt: reencrypt,
-  // decryptPasswordWithProcessedPin: decryptPasswordWithProcessedPin,
+  decryptPasswordWithProcessedPin: decryptPasswordWithProcessedPin,
   // stretchPassword: stretchPassword,
   hashNTimes: hashNTimes,
   cipherFunction: cipherFunction,
