@@ -208,7 +208,7 @@ function encrypt(data, password, iterations) {
 
   var iv    = crypto.randomBytes(SALT_BYTES)
     , salt  = iv.toString('binary')
-    , key   = crypto.pbkdf2Sync(password, salt, iterations, KEY_BIT_LEN / 8);
+    , key   = crypto.pbkdf2Sync(password, salt, iterations, KEY_BIT_LEN / 8, 'sha1');
 
   var cipher = crypto.createCipheriv(AES.CBC, key, iv);
   cipher.setAutoPadding(false);
@@ -231,7 +231,7 @@ function decryptAes(data, password, iterations, options) {
     , iv      = new Buffer(dataHex.slice(0, SALT_BYTES * 2), 'hex')
     , salt    = iv.toString('binary')
     , payload = dataHex.slice(SALT_BYTES * 2)
-    , key     = crypto.pbkdf2Sync(password, salt, iterations, KEY_BIT_LEN / 8);
+    , key     = crypto.pbkdf2Sync(password, salt, iterations, KEY_BIT_LEN / 8, 'sha1');
 
   var decipher = crypto.createDecipheriv(options.mode || AES.CBC, key, iv);
   decipher.setAutoPadding(false);
