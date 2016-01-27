@@ -189,6 +189,19 @@ function decryptWalletV1(data, password) {
   }, null);
 }
 
+function encryptWallet(data, password, pbkdf2_iterations, version) {
+  assert(data, 'data missing');
+  assert(password, 'password missing');
+  assert(pbkdf2_iterations, 'pbkdf2_iterations missing');
+  assert(version, 'version missing');
+
+  return JSON.stringify({
+    pbkdf2_iterations: pbkdf2_iterations,
+    version: version,
+    payload: encrypt(data, password, pbkdf2_iterations)
+  });
+}
+
 function encrypt(data, password, iterations) {
   var SALT_BYTES  = 16
     , KEY_BIT_LEN = 256;
@@ -241,9 +254,9 @@ function hashNTimes(password, iterations) {
 module.exports = {
   decryptSecretWithSecondPassword: decryptSecretWithSecondPassword,
   encryptSecretWithSecondPassword: encryptSecretWithSecondPassword,
-  // decrypt: decrypt, // deprecated
+  // decrypt: decrypt,
   encrypt: encrypt,
-  // encryptWallet: encryptWallet,
+  encryptWallet: encryptWallet,
   decryptWallet: decryptWallet,
   // reencrypt: reencrypt,
   // decryptPasswordWithProcessedPin: decryptPasswordWithProcessedPin,
