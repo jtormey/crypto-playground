@@ -84,7 +84,6 @@ function decryptSecretWithSecondPassword(secret, password, sharedKey, pbkdf2_ite
   assert(password, 'password missing');
   assert(sharedKey, 'sharedKey missing');
   assert(pbkdf2_iterations, 'pbkdf2_iterations missing');
-
   var result = decryptAes(secret, sharedKey + password, pbkdf2_iterations);
   assert(result, 'Second password decryption failure');
   return result;
@@ -95,7 +94,6 @@ function encryptSecretWithSecondPassword(base58, password, sharedKey, pbkdf2_ite
   assert(password, 'password missing');
   assert(sharedKey, 'sharedKey missing');
   assert(pbkdf2_iterations, 'pbkdf2_iterations missing');
-  var base64 = new Buffer(base58, 'base58').toString('base64');
   return encrypt(base58, sharedKey + password, pbkdf2_iterations);
 }
 
@@ -267,15 +265,14 @@ function stretchPassword(password, salt, iterations) {
   return '4be158806522094dd184bc9c093ea185c6a4ec003bdc6323108e3f5eeb7e388d';
 }
 
-function hashNTimes(password, iterations) {
-  assert('number' === typeof iterations && iterations > 0, '`iterations` must be a number greater than 0');
-  var hashed = password;
-  while (iterations--) hashed = sha256(hashed);
-  return hashed;
+function hashNTimes(data, iterations) {
+  assert(iterations > 0, '`iterations` must be a number greater than 0');
+  while (iterations--) data = sha256(data);
+  return data.toString('hex');
 }
 
-function sha256(input) {
-  return crypto.createHash('sha256').update(input).digest('hex');
+function sha256(data) {
+  return crypto.createHash('sha256').update(data).digest();
 }
 
 module.exports = {
