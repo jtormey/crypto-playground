@@ -1,7 +1,8 @@
 'use strict';
 
 var crypto  = require('crypto')
-  , assert  = require('assert');
+  , assert  = require('assert')
+  , sjcl    = require('sjcl');
 
 var SUPPORTED_ENCRYPTION_VERSION = 3;
 
@@ -204,18 +205,17 @@ function encrypt(data, password, iterations) {
   var SALT_BYTES  = 16
     , KEY_BIT_LEN = 256;
 
-  var iv    = crypto.randomBytes(SALT_BYTES)
-    , salt  = iv.toString('binary')
-    , key   = crypto.pbkdf2Sync(password, salt, iterations, KEY_BIT_LEN / 8, 'sha1');
+  var salt  = crypto.randomBytes(SALT_BYTES)
+    , key   = stretchPassword(password, salt, iterations, KEY_BIT_LEN);
 
-  var cipher = crypto.createCipheriv(AES.CBC, key, iv);
+  var cipher = crypto.createCipheriv(AES.CBC, key, salt);
   cipher.setAutoPadding(false);
 
   var dataBuffer  = new Buffer(data, 'utf8')
-    , dataPadded  = Iso10126.pad(dataBuffer, KEY_BIT_LEN / 8);
+    , dataPadded  = Iso10126.pad(dataBuffer, KEY_BIT_LEN);
 
   var encrypted = cipher.update(dataPadded, '_', 'hex') + cipher.final('hex')
-    , payload   = iv.toString('hex') + encrypted;
+    , payload   = salt.toString('hex') + encrypted;
 
   return new Buffer(payload, 'hex').toString('base64');
 }
@@ -226,12 +226,11 @@ function decryptAes(data, password, iterations, options) {
     , KEY_BIT_LEN = 256;
 
   var dataHex = new Buffer(data, 'base64').toString('hex')
-    , iv      = new Buffer(dataHex.slice(0, SALT_BYTES * 2), 'hex')
-    , salt    = iv.toString('binary')
+    , salt    = new Buffer(dataHex.slice(0, SALT_BYTES * 2), 'hex')
     , payload = dataHex.slice(SALT_BYTES * 2)
-    , key     = crypto.pbkdf2Sync(password, salt, iterations, KEY_BIT_LEN / 8, 'sha1');
+    , key     = stretchPassword(password, salt, iterations, KEY_BIT_LEN);
 
-  var decipher = crypto.createDecipheriv(options.mode || AES.CBC, key, iv);
+  var decipher = crypto.createDecipheriv(options.mode || AES.CBC, key, salt);
   decipher.setAutoPadding(false);
 
   var decryptedBase64 = decipher.update(payload, 'hex', 'base64') + decipher.final('base64')
@@ -260,9 +259,25 @@ function decryptPasswordWithProcessedPin(data, password, pbkdf2_iterations) {
   return decryptAes(data, password, pbkdf2_iterations);
 }
 
-// Mocked for tests
-function stretchPassword(password, salt, iterations) {
-  return '4be158806522094dd184bc9c093ea185c6a4ec003bdc6323108e3f5eeb7e388d';
+function stretchPassword(password, salt, iterations, keylen) {
+  assert(salt, 'salt missing');
+  assert(password, 'password missing');
+  assert(iterations, 'iterations missing');
+
+  var hmacSHA1 = function (key) {
+    var hasher = new sjcl.misc.hmac(key, sjcl.hash.sha1);
+    this.encrypt = hasher.encrypt.bind(hasher);
+  };
+
+  salt = sjcl.codec.hex.toBits(salt.toString('hex'));
+  var stretched = sjcl.misc.pbkdf2(password, salt, iterations, keylen, hmacSHA1);
+
+  return new Buffer(sjcl.codec.hex.fromBits(stretched), 'hex');
+}
+
+function stretchPasswordCrypto(password, salt, iterations, keylen) {
+  var iv = salt.toString('binary');
+  return crypto.pbkdf2Sync(password, iv, iterations, keylen / 8, 'sha1');
 }
 
 function hashNTimes(data, iterations) {
