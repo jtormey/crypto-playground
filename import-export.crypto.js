@@ -1,7 +1,6 @@
 'use strict';
 
 var assert = require('assert');
-var CryptoJS = require('crypto-js');
 var Bitcoin = require('bitcoinjs-lib');
 var BigInteger = require('bigi');
 var Base58 = require('bs58');
@@ -11,27 +10,6 @@ var WalletCrypto = require('./wallet-crypto');
 var hash256 = Bitcoin.crypto.hash256;
 
 var ImportExport = new function() {
-
-  function bufferToWordArray(buffer) {
-    assert(Buffer.isBuffer(buffer), "Expected Buffer, got", buffer);
-    var words = [];
-    for (var i = 0, b = 0; i < buffer.length; i++, b += 8) {
-      words[b >>> 5] |= buffer[i] << 24 - b % 32;
-    }
-
-    return new CryptoJS.lib.WordArray.init(words, buffer.length);
-  }
-
-  function wordArrayToBuffer(wordArray) {
-    assert(Array.isArray(wordArray.words), "Expected WordArray, got" + wordArray);
-    var words = wordArray.words;
-    var buffer = new Buffer(words.length * 4);
-    words.forEach(function(value, i) {
-      buffer.writeInt32BE(value & -1, i * 4);
-    });
-
-    return buffer;
-  }
 
   this.parseBIP38toECKey = function(base58Encrypted, passphrase, success, wrong_password, error) {
     var hex;
@@ -180,19 +158,15 @@ var ImportExport = new function() {
     if (N > MAX_VALUE / 128 / r) throw Error("Parameter N is too large");
     if (r > MAX_VALUE / 128 / p) throw Error("Parameter r is too large");
 
-    if(typeof(passwd) !== 'string') {
-      passwd = bufferToWordArray(passwd);
+    if(!Buffer.isBuffer(passwd)) {
+      passwd = new Buffer(passwd, 'utf8');
     }
 
-    if(typeof(salt) !== 'string') {
-      salt = bufferToWordArray(salt);
+    if(!Buffer.isBuffer(salt)) {
+      salt = new Buffer(salt, 'utf8');
     }
 
-    var PBKDF2_opts = {iterations: 1, keySize: dkLen/4, hasher: CryptoJS.algo.SHA256};
-
-    var B = CryptoJS.PBKDF2(passwd, salt, { iterations: 1, keySize: (p * 128 * r)/4, hasher: CryptoJS.algo.SHA256});
-
-    B = wordArrayToBuffer(B);
+    var B = WalletCrypto.pbkdf2(passwd, salt, 1, (p * 128 * r), WalletCrypto.algo.SHA256);
 
     // There is a bug in the web worker below, so it's not used currently.
 
@@ -246,8 +220,7 @@ var ImportExport = new function() {
     // Called in Firefox and IE which don't support Blob web workers with CSP enabled.
     window.setTimeout(function() {
       scryptCore();
-      B = bufferToWordArray(B);
-      var ret = wordArrayToBuffer(CryptoJS.PBKDF2(passwd, B, PBKDF2_opts));
+      var ret = WalletCrypto.pbkdf2(passwd, B, 1, dkLen, WalletCrypto.algo.SHA256);
 
       callback(ret);
     }, 0);
