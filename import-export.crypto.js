@@ -6,9 +6,9 @@ var Bitcoin = require('bitcoinjs-lib');
 var BigInteger = require('bigi');
 var Base58 = require('bs58');
 var Unorm = require('unorm');
+var WalletCrypto = require('./wallet-crypto');
 
 var hash256 = Bitcoin.crypto.hash256;
-
 
 var ImportExport = new function() {
 
@@ -88,7 +88,7 @@ var ImportExport = new function() {
     }
 
     var decrypted;
-    var AES_opts = { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.NoPadding };
+    var AES_opts = { mode: WalletCrypto.mode.ECB, padding: WalletCrypto.pad.NoPadding };
 
     var verifyHashAndReturn = function() {
       var tmpkey = new Bitcoin.ECKey(decrypted, isCompPoint);
@@ -110,10 +110,9 @@ var ImportExport = new function() {
 
       ImportExport.Crypto_scrypt(passphrase, addresshash, 16384, 8, 8, 64, function(derivedBytes) {
 
-        var k = bufferToWordArray(derivedBytes.slice(32, 32+32));
+        var k = derivedBytes.slice(32, 32+32);
 
-        var decryptedWords = CryptoJS.AES.decrypt({ciphertext: bufferToWordArray(Buffer(hex.slice(7, 7+32)))}, k, AES_opts);
-        var decryptedBytes = wordArrayToBuffer(decryptedWords);
+        var decryptedBytes = WalletCrypto.decryptRaw.AES(Buffer(hex.slice(7, 7+32)), k, AES_opts);
         for (var x = 0; x < 32; x++) { decryptedBytes[x] ^= derivedBytes[x]; }
 
         decrypted = BigInteger.fromBuffer(decryptedBytes);
@@ -144,19 +143,15 @@ var ImportExport = new function() {
         var addresshashplusownerentropy = Buffer(hex.slice(3, 3+12));
 
         ImportExport.Crypto_scrypt(passpoint, addresshashplusownerentropy, 1024, 1, 1, 64, function(derived) {
-          var k = bufferToWordArray(derived.slice(32));
+          var k = derived.slice(32);
 
-          var unencryptedpart2 = CryptoJS.AES.decrypt({ciphertext: bufferToWordArray(encryptedpart2)}, k, AES_opts);
-
-          var unencryptedpart2Bytes = wordArrayToBuffer(unencryptedpart2);
+          var unencryptedpart2Bytes = WalletCrypto.decryptRaw.AES(encryptedpart2, k, AES_opts);
 
           for (var i = 0; i < 16; i++) { unencryptedpart2Bytes[i] ^= derived[i+16]; }
 
           var encryptedpart1 = Buffer.concat([Buffer(hex.slice(15, 15+8)), Buffer(unencryptedpart2Bytes.slice(0, 0+8))]);
 
-          var unencryptedpart1 = CryptoJS.AES.decrypt({ciphertext: bufferToWordArray(encryptedpart1)}, k, AES_opts);
-
-          var unencryptedpart1Bytes = wordArrayToBuffer(unencryptedpart1);
+          var unencryptedpart1Bytes = WalletCrypto.decryptRaw.AES(encryptedpart1, k, AES_opts);
 
           for (var i = 0; i < 16; i++) { unencryptedpart1Bytes[i] ^= derived[i]; }
 

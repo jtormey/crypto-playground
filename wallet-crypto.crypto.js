@@ -8,7 +8,13 @@ var SUPPORTED_ENCRYPTION_VERSION = 3;
 
 var AES = {
   CBC : 'aes-256-cbc',
-  OFB : 'aes-256-ofb'
+  OFB : 'aes-256-ofb',
+  ECB : 'aes-256-ecb'
+};
+
+var ALGORITHMS = {
+  SHA1    : 'sha1',
+  SHA256  : 'sha256'
 };
 
 var NoPadding = {
@@ -78,6 +84,22 @@ var Iso97971 = {
     var zeroBytesRemoved = ZeroPadding.unpad(dataBytes);
     return zeroBytesRemoved.slice(0, zeroBytesRemoved.length - 1);
   }
+};
+
+var decryptRaw = {
+
+  AES: function AES(dataBytes, key, options) {
+    options = options || {};
+
+    var decipher = crypto.createDecipheriv(options.mode || AES.CBC, key, '');
+    decipher.setAutoPadding(!options.padding);
+
+    var decryptedBytes = Buffer.concat([ decipher.update(dataBytes), decipher.final() ]);
+    if (options.padding) decryptedBytes = options.padding.unpad(decryptedBytes);
+
+    return decryptedBytes;
+  }
+
 };
 
 function decryptSecretWithSecondPassword(secret, password, sharedKey, pbkdf2_iterations) {
@@ -275,9 +297,10 @@ function stretchPassword(password, salt, iterations, keylen) {
   return new Buffer(sjcl.codec.hex.fromBits(stretched), 'hex');
 }
 
-function stretchPasswordCrypto(password, salt, iterations, keylen) {
+function pbkdf2(password, salt, iterations, keylen, algorithm) {
+  algorithm = algorithm || ALGORITHMS.SHA1;
   var iv = salt.toString('binary');
-  return crypto.pbkdf2Sync(password, iv, iterations, keylen / 8, 'sha1');
+  return crypto.pbkdf2Sync(password, iv, iterations, keylen, algorithm);
 }
 
 function hashNTimes(data, iterations) {
@@ -301,13 +324,17 @@ module.exports = {
   decryptPasswordWithProcessedPin: decryptPasswordWithProcessedPin,
   stretchPassword: stretchPassword,
   hashNTimes: hashNTimes,
-  sha256: sha256,
   cipherFunction: cipherFunction,
   decryptAes: decryptAes,
 
   // Not part of original
+  pbkdf2: pbkdf2,
+  sha256: sha256,
   decryptWalletSync: decryptWalletSync,
-  padding: {
+  decryptRaw: decryptRaw,
+  mode: AES,
+  algo: ALGORITHMS,
+  pad: {
     NoPadding: NoPadding,
     ZeroPadding: ZeroPadding,
     Iso10126: Iso10126,
